@@ -1,0 +1,348 @@
+CREATE DATABASE fsd ;
+
+1/
+
+CREATE TABLE `coaches` (
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`first_name` VARCHAR(10) NOT NULL,
+`last_name` VARCHAR (20) NOT NULL,
+`salary` DECIMAL(10,2)NOT NULL DEFAULT 0.00,
+`coach_level` INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE `skills_data`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`dribbling` INT DEFAULT 0,
+`pace` INT DEFAULT 0,
+`passing` INT DEFAULT 0,
+`shooting` INT DEFAULT 0,
+`speed` INT DEFAULT 0,
+`strength` INT DEFAULT 0
+);
+
+CREATE TABLE `countries`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL
+);
+
+CREATE TABLE `towns`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL,
+`country_id` INT NOT NULL,
+CONSTRAINT `fk_towns_country`
+FOREIGN KEY (`country_id`)
+REFERENCES `countries`(`id`)
+);
+
+CREATE TABLE `stadiums`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL,
+`capacity` INT NOT NULL,
+`town_id` INT NOT NULL,
+CONSTRAINT `fk_stadiums_town`
+FOREIGN KEY (`town_id`)
+REFERENCES `towns`(`id`)
+);
+
+2/  
+
+CREATE TABLE `planets`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE `spaceports`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(50) NOT NULL,
+`planet_id` INT,
+CONSTRAINT `fk_spaceports_planets`
+FOREIGN KEY (`planet_id`)
+REFERENCES `planets`(`id`)
+);
+
+CREATE TABLE `spaceships` (
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(50) NOT NULL,
+`manifacturer` VARCHAR(30) NOT NULL, 
+`light_speed_rate` INT DEFAULT 0
+);
+
+CREATE TABLE `colonists`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`first_name` VARCHAR(20) NOT NULL,
+`last_name` VARCHAR(20) NOT NULL,
+`ucn` CHAR(10) NOT NULL UNIQUE,
+`birth_date` DATE NOT NULL
+);
+
+CREATE TABLE `journeys`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`journey_start` DATETIME NOT NULL,
+`journey_end` DATETIME NOT NULL,
+`purpose` ENUM('Medical', 'Technical', 'Educational', 'Military') ,
+`destination_spaceport_id` INT,
+`spaceship_id` INT,
+CONSTRAINT `fk_journeys_spaceports`
+FOREIGN KEY (`destination_spaceport_id`)
+REFERENCES `spaceports`(`id`),
+CONSTRAINT `fk_journeys_spaceships`
+FOREIGN KEY (`spaceship_id`)
+REFERENCES `spaceships`(`id`)
+);
+
+CREATE TABLE `travel_cards`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`card_number` CHAR(10) NOT NULL UNIQUE,
+`job_during_journey` ENUM('Pilot', 'Engineer', 'Trooper', 'Cleaner', 'Cook'),
+`colonist_id` INT ,
+`journey_id` INT,
+CONSTRAINT `fk_travel_cards_colonists`
+FOREIGN KEY (`colonist_id`)
+REFERENCES `colonists`(`id`),
+CONSTRAINT `fk_travel_cards_journeys`
+FOREIGN KEY (`journey_id`)
+REFERENCES `journeys`(`id`)
+);
+
+3/
+
+INSERT INTO `travel_cards`(`card_number`,`job_during_journey`,
+`colonist_id`, `journey_id`)
+SELECT IF(col.`birth_date` > '1980-01-01', CONCAT( YEAR(col.`birth_date`),
+DAY(col.`birth_date`), LEFT(col.`ucn`, 4)  ), CONCAT( YEAR(col.`birth_date`),
+MONTH(col.`birth_date`), RIGHT(col.`ucn`, 4) )), IF (col.`id` % 2 = 0 , 'Pilot',
+IF(col.`id` % 3 = 0, 'Cook', 'Engineer') ) , col.`id`, LEFT(col.`ucn`,1)
+FROM `colonists` AS col
+WHERE col.`id` BETWEEN 96 AND 100;
+
+4/  
+
+UPDATE `journeys` as a 
+SET a.`purpose` = 
+( CASE 
+	WHEN a.`id` % 2 = 0 THEN 'Medical' 
+	WHEN a.`id` % 3 = 0 THEN 'Technical' 
+ 	WHEN a.`id` % 5 = 0 THEN 'Educational' 
+	WHEN a.`id` % 7 = 0 THEN 'Military' 
+	ELSE a.`purpose` 
+END); 
+
+5/
+DELETE FROM colonists
+  WHERE id NOT IN (
+    SELECT tc.colonist_id FROM travel_cards tc
+  );
+
+
+CREATE DATABASE fsd ;
+
+6/
+
+CREATE TABLE `coaches` (
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`first_name` VARCHAR(10) NOT NULL,
+`last_name` VARCHAR (20) NOT NULL,
+`salary` DECIMAL(10,2)NOT NULL DEFAULT 0.00,
+`coach_level` INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE `skills_data`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`dribbling` INT DEFAULT 0,
+`pace` INT DEFAULT 0,
+`passing` INT DEFAULT 0,
+`shooting` INT DEFAULT 0,
+`speed` INT DEFAULT 0,
+`strength` INT DEFAULT 0
+);
+
+CREATE TABLE `countries`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL
+);
+
+CREATE TABLE `towns`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL,
+`country_id` INT NOT NULL,
+CONSTRAINT `fk_towns_country`
+FOREIGN KEY (`country_id`)
+REFERENCES `countries`(`id`)
+);
+
+CREATE TABLE `stadiums`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR (45) NOT NULL,
+`capacity` INT NOT NULL,
+`town_id` INT NOT NULL,
+CONSTRAINT `fk_stadiums_town`
+FOREIGN KEY (`town_id`)
+REFERENCES `towns`(`id`)
+);
+
+CREATE TABLE `teams`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(45) NOT NULL,
+`established` DATE NOT NULL ,
+`fan_base` BIGINT(20) NOT NULL DEFAULT 0,
+`stadium_id` INT NOT NULL,
+CONSTRAINT `fk_team_stadium`
+FOREIGN KEY (`stadium_id`)
+REFERENCES `stadiums`(`id`)
+);
+
+CREATE TABLE `players`(
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`first_name` VARCHAR(10) NOT NULL,
+`last_name` VARCHAR(20) NOT NULL,
+`age` INT NOT NULL DEFAULT 0,
+`position` CHAR(1) NOT NULL,
+`salary` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+`hire_date` DATETIME ,
+`skills_data_id` INT NOT NULL,
+`team_id` INT,
+CONSTRAINT `fk_players_skills_data`
+FOREIGN KEY (`skills_data_id`)
+REFERENCES `skills_data`(`id`),
+CONSTRAINT `fk_players_team`
+FOREIGN KEY (`team_id`)
+REFERENCES `teams`(`id`)
+);
+
+CREATE TABLE `players_coaches` (
+`player_id` INT,
+`coach_id` INT,
+CONSTRAINT `fk_players_coaches`
+FOREIGN KEY (`coach_id`)
+REFERENCES `coaches`(`id`),
+CONSTRAINT `fk_coaches_players`
+FOREIGN KEY (`player_id`)
+REFERENCES `players`(`id`)
+
+);
+
+
+7/ 
+
+INSERT INTO `coaches`(`first_name`, `last_name`, `salary`, `coach_level`)
+SELECT `first_name`, `last_name`, `salary` * 2, 
+CHAR_LENGTH(`first_name`) 
+FROM `players`
+WHERE `age` >= 45;
+
+
+8/
+
+UPDATE `coaches`
+SET `coach_level` = `coach_level` + 1
+WHERE `first_name` LIKE 'A%'
+AND `id` IN (SELECT `coach_id` FROM `players_coaches`);
+
+
+
+9/
+
+DELETE FROM `players` 
+WHERE `age` >= 45;
+
+10/
+
+SELECT `first_name`, `age`, `salary` 
+FROM `players`
+ORDER BY `salary` DESC;
+
+11/
+
+SELECT a.`id`, CONCAT(a.`first_name`, ' ', a.`last_name`) AS 'full_name',
+a.`age`, a.`position`, a.`hire_date`
+FROM `players` AS a
+JOIN `skills_data` AS b
+ON a.`skills_data_id` = b.`id`
+WHERE a.`age` < 23 AND a.`position` = 'A' 
+AND a.`hire_date` IS NULL AND b.`strength` > 50
+ORDER BY a.`salary`, a.`age`;
+
+12/
+SELECT a.`name` AS 'team_name', a.`established`, a.`fan_base`,
+COUNT(b.`id`) AS 'players_count'
+FROM `teams` AS a
+LEFT JOIN `players` AS b
+ON b.`team_id` = a.`id`
+GROUP BY a.`id`
+ORDER BY `players_count` DESC, `fan_base` DESC;
+
+8
+13/
+
+SELECT MAX(a.`speed`) AS 'max_speed', b.`name` AS 'town_name'
+FROM `towns` AS b
+LEFT JOIN `stadiums` AS c
+ON b.`id` = c.`town_id`
+LEFT JOIN `teams` AS d
+ON c.`id` = d.`stadium_id`
+LEFT JOIN `players` AS e
+ON d.`id` = e.`team_id`
+LEFT JOIN `skills_data` AS a
+ON e.`skills_data_id` = a.`id`
+WHERE d.`name` != 'Devify'
+GROUP BY b.`id`
+ORDER BY `max_speed` DESC, `town_name`;
+
+14/
+
+SELECT a.`name`, 
+COUNT(b.`id`) AS 'total_count_of_players',
+SUM(b.`salary`) AS 'total_sum_of_salaries'
+FROM `countries` AS a
+LEFT JOIN `towns` AS c
+ON a.`id` = c.`country_id`
+LEFT JOIN `stadiums` AS d
+ON c.`id` = d.`town_id`
+LEFT JOIN `teams` AS e
+ON d.`id` = e.`stadium_id`
+LEFT JOIN `players` AS b
+ON e.`id` = b.`team_id`
+GROUP BY a.`id`
+ORDER BY `total_count_of_players` DESC , a.`name` ASC;
+
+15/
+
+CREATE FUNCTION udf_stadium_players_count (stad VARCHAR(30)) 
+RETURNS INT 
+DETERMINISTIC
+BEGIN
+DECLARE count_players INT;
+SET count_players := (
+SELECT COUNT(a.`id`)
+FROM `players` AS a
+JOIN `teams` AS b
+ON a.`team_id` = b.`id`
+JOIN `stadiums` AS c
+ON b.`stadium_id` = c.`id`
+WHERE c.`name` = stad
+);
+RETURN count_players;
+END
+
+16/
+
+CREATE PROCEDURE udp_find_playmaker (min_dribble_points INT, team_name VARCHAR(45) )
+BEGIN
+SELECT CONCAT(a.`first_name`,' ',a.`last_name`) AS 'full_name', a.`age`, 
+a.`salary`, b.`dribbling`, b.`speed`,c.`name` AS 'team_name'
+FROM `teams` AS c
+JOIN `players` AS a
+ON c.`id` = a.`team_id`
+JOIN `skills_data` AS b
+ON a.`skills_data_id` = b.`id`
+WHERE b.`dribbling` > min_dribble_points AND
+c.`name` = team_name AND
+b.`speed` >(SELECT AVG(`speed`) FROM skills_data) 
+ORDER BY b.`speed` DESC
+LIMIT 1;
+END
+
+
+	
+
+
